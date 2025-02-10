@@ -8,7 +8,7 @@ from Robotic_Arm.rm_robot_interface import *
 
 import numpy as np
 
-# 定义机械臂连接信息
+# 定义机械臂连接信
 IP_ADDRESS = "192.168.1.18"
 PORT = 8080
 CONNECTION_LEVEL = 3
@@ -161,7 +161,7 @@ class MIArmController:
         speed = 30#夹爪运行速度初始化
         force = 50#无量纲，需要尝试
         block = True
-        timeout = 2#单位为秒
+        timeout = 0 #单位为秒设置为非阻塞模式，这样与透传模式形成配合
         if flag_claw==1:
             #此处使得夹爪闭合，采用力控方法
             print("\nGripper is gripping\n")
@@ -189,10 +189,14 @@ def main():
         MI_robot = MIArmController("192.168.1.18", 8080, 3)
       
         for dof_idx in range(MI_robot.num_eposide):
-            # 提取当前关节的数据
-            joint_angle = MI_robot.arm_joint_dofs[dof_idx,:].tolist()      # 假设只取第一个环境的数据
+            # 提取当前关节的数量
+            joint_angle = MI_robot.arm_joint_dofs[dof_idx,:].tolist() 
             #弧度转换为°
             joint_angle = list(map(todu, joint_angle))
+            #夹爪状态获取并转换
+            claw_status = MI_robot.Claw_joit_dofs[dof_idx,:].tolist()
+            
+            
             if(dof_idx==1):
                 movej_result = MI_robot.robot.rm_movej(joint_angle, v=10, r=1, connect=0, block=1)
                 print("move1")
