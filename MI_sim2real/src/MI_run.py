@@ -48,8 +48,8 @@ class MIArmController:
         print(self.num_eposide)
     
 
-        self.threshold_low=0.35
-        self.threshold_high=0.35
+        self.threshold_low=0.47
+        self.threshold_high=0.40
     def disconnect(self):
         """
         Disconnect from the robot arm.
