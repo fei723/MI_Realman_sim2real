@@ -47,6 +47,9 @@ class MIArmController:
         self.Claw_dof = self.Claw_joit_dofs.shape[1]
         print(self.num_eposide)
     
+
+        self.threshold_low=0.35
+        self.threshold_high=0.35
     def disconnect(self):
         """
         Disconnect from the robot arm.
@@ -177,7 +180,18 @@ class MIArmController:
                 print("\nGripper release succeeded\n")
             else:
                 print("\nGripper release failed, Error code: ", gripper_result, "\n")
-
+    def claw_threshold_judgment(self,value,):
+        """
+        判断输入值与阈值的关系
+        :param value: 输入值
+        :param threshold_low && threshold_high: 高低阈值判断，夹爪开启关闭
+        """
+        if value > self.threshould_high:
+            print( f"{value} claw_status :open")
+            self.set_Claw(0)
+        elif value <self.threshold_low:
+            print( f"{value} claw_status :close")
+            self.set_Claw(1)
 
 
 def todu(x):
@@ -194,9 +208,9 @@ def main():
             #弧度转换为°
             joint_angle = list(map(todu, joint_angle))
             #夹爪状态获取并转换
-            claw_status = MI_robot.Claw_joit_dofs[dof_idx,:].tolist()
-            
-            
+            claw_status = MI_robot.Claw_joit_dofs[dof_idx,1].tolist()#两侧夹爪对称
+            MI_robot.claw_threshold_judgment(claw_status)
+
             if(dof_idx==1):
                 movej_result = MI_robot.robot.rm_movej(joint_angle, v=10, r=1, connect=0, block=1)
                 print("move1")
