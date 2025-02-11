@@ -99,7 +99,6 @@ class MIArmController:
             print("\nmovej_p motion succeeded\n")
         else:
             print("\nmovej_p motion failed, Error code: ", movej_p_result, "\n")
-
     def set_Claw(self,flag_claw):
         #力控相关参数初始化
         speed = 30#夹爪运行速度初始化
@@ -135,14 +134,54 @@ class MIArmController:
             self.set_Claw(1)
 
 
+
+class claw_init:
+    def __init__(self,ip,port):
+        # 创建一个 TCP 服务器套接字
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 绑定到本地地址和端口
+        self.client.connect((ip,port))
+        print("机械臂连接",ip) 
+        self.set_claw_voltage()
+        self.set_modbus_mode()  
+        self.set_Claw_N()
+        self.write_single_register()
+    def send_cmd(self, cmd_6axis):
+        self.client.send(cmd_6axis.encode('utf-8'))
+        # Optional: Receive a response from the server
+        # _ = client.recv(1024).decode(s)
+        return True 
+    def set_claw_voltage(self):
+        point6_00 = '{"command":"set_tool_voltage","voltage_type":3}\r\n'
+        _ = self.send_cmd(point6_00)
+        print("设置夹爪端电源输出 24V")
+    def set_modbus_mode(self):
+        point6_00 = '{"command":"set_modbus_mode","port":1,"baudrate":115200,"timeout ":2}\r\n'
+        _ = self.send_cmd(point6_00)
+        print("配置通讯端口 ModbusRTU 模式")
+    def write_single_register(self):
+        point6_00 = '{"command":"write_single_register","port":1,"address":256,"data":1, "device":1}\r\n'
+        _ = self.send_cmd(point6_00) 
+        print("执行初始化成功")
+    def set_Claw_N(self):
+        point6_00 = '{"command":"write_single_register","port":1,"address":257,"data":30, "device":1}\r\n'
+        _ = self.send_cmd(point6_00)
+        print("设置30% 力值 （写操作）") 
+    def set_Claw_position(self,position):
+        #调整夹爪的位置到设定值
+        #范围100~1000
+        point6_00 = '{"command":"write_single_register","port":1,"address":259,"data":'+str(position)+', "device":1}\r\n'
+        _ = self.send_cmd(point6_00)
 def todu(x):
     return x *180/3.14
 
 def main():
     try:
         # 创建机械臂对象
+        #这里采用两个类单独控制机械臂和夹爪，MI_robot为机械臂 MI_claw为夹爪
         MI_robot = MIArmController("192.168.1.18", 8080, 3)
-      
+        MI_claw = claw_init("192.168.1.18", 8080)
+        MI_claw.set_Claw_position(200)
         for dof_idx in range(MI_robot.num_eposide):
             # 提取当前关节的数量
             joint_angle = MI_robot.arm_joint_dofs[dof_idx,:].tolist() 
