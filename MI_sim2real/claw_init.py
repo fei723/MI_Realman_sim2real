@@ -26,13 +26,13 @@ client.connect((ip, port_no))
 
 print("机械臂第一次连接", ip)
 
-time.sleep(3)
+time.sleep(1)
 
 point6_00 = '{"command":"set_tool_voltage","voltage_type":3}\r\n'
 
 _ = send_cmd(client, cmd_6axis=point6_00)
 
-time.sleep(3)
+time.sleep(1)
 
 print("//设置工具端电源输出 24V")
 
@@ -40,7 +40,7 @@ point6_00 = '{"command":"set_modbus_mode","port":1,"baudrate":115200,"timeout ":
 
 _ = send_cmd(client, cmd_6axis=point6_00)
 
-time.sleep(2)
+time.sleep(1)
 
 print("配置通讯端口 ModbusRTU 模式")
 
@@ -48,7 +48,7 @@ point6_00 = '{"command":"write_single_register","port":1,"address":256,"data":1,
 
 _ = send_cmd(client, cmd_6axis=point6_00)
 
-time.sleep(2)
+time.sleep(1)
 
 print(" 执行初始化成功")
 
@@ -56,7 +56,7 @@ point6_00 = '{"command":"write_single_register","port":1,"address":257,"data":30
 
 _ = send_cmd(client, cmd_6axis=point6_00)
 
-time.sleep(2)
+time.sleep(1)
 
 print(" 设置30% 力值 （写操作）")
 
@@ -66,7 +66,7 @@ while True:
 
     _ = send_cmd(client, cmd_6axis=point6_00)
 
-    time.sleep(3)
+    time.sleep(1)
 
     print("设置 500 位置 ")
 
@@ -74,7 +74,7 @@ while True:
 
     _ = send_cmd(client, cmd_6axis=point6_00)
 
-    time.sleep(3)
+    time.sleep(1)
 
     print("设置 1000 位置 ")
 
@@ -82,6 +82,12 @@ while True:
 
     _ = send_cmd(client, cmd_6axis=point6_00)
 
-    time.sleep(3)
+    time.sleep(1)
 
     print("设置 200 位置 ")
+    
+    point6_00 = '{"command":"read_single_register","port":1,"address":513, "device":1}\r\n'
+    _ = send_cmd(client, cmd_6axis=point6_00)
+    a = client.recv(1024).decode(encoding="utf-8")
+    # client.read_holding_registers(  )
+    print(a)
