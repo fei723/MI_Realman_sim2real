@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 import time
 from Robotic_Arm.rm_robot_interface import *
-
+import socket
 import numpy as np
 
 # 定义机械臂连接信
@@ -44,12 +44,9 @@ class MIArmController:
         self.arm_joint_dofs = joint_data[:,0:6]
         self.arm_dof = self.arm_joint_dofs.shape[1] 
         self.Claw_joit_dofs = joint_data[:,7:8]
-        self.Claw_dof = self.Claw_joit_dofs.shape[1]
         print(self.num_eposide)
-    
-
-        self.threshold_low=0.47
-        self.threshold_high=0.40
+        self.threshould_low=0.040
+        self.threshould_high=0.047
     def disconnect(self):
         """
         Disconnect from the robot arm.
@@ -103,62 +100,6 @@ class MIArmController:
         else:
             print("\nmovej_p motion failed, Error code: ", movej_p_result, "\n")
 
-    def set_gripper_pick_on(self, speed, force, block=True, timeout=30):
-        """
-        Perform continuous force-controlled gripping with the gripper.
-
-        Args:
-            speed (int): Speed of the gripper.
-            force (int): Force applied by the gripper.
-            block (bool, optional): Whether the function is blocking. Defaults to True.
-            timeout (int, optional): Timeout duration. Defaults to 30.
-
-        Returns:
-            None
-        """
-        gripper_result = self.robot.rm_set_gripper_pick_on(speed, force, block, timeout)
-        if gripper_result == 0:
-            print("\nGripper continuous force control gripping succeeded\n")
-        else:
-            print("\nGripper continuous force control gripping failed, Error code: ", gripper_result, "\n")
-        time.sleep(2)
-
-    def set_gripper_release(self, speed, block=True, timeout=30):
-        """
-        Release the gripper.
-
-        Args:
-            speed (int): Speed of the gripper release.
-            block (bool, optional): Whether the function is blocking. Defaults to True.
-            timeout (int, optional): Timeout duration. Defaults to 30.
-
-        Returns:
-            None
-        """
-        gripper_result = self.robot.rm_set_gripper_release(speed, block, timeout)
-        if gripper_result == 0:
-            print("\nGripper release succeeded\n")
-        else:
-            print("\nGripper release failed, Error code: ", gripper_result, "\n")
-        time.sleep(2)
-
-    def set_lift_height(self, speed, height, block=True):
-        """
-        Set the lift height of the robot.
-
-        Args:
-            speed (int): Speed of the lift.
-            height (int): Target height of the lift.
-            block (bool, optional): Whether the function is blocking. Defaults to True.
-
-        Returns:
-            None
-        """
-        lift_result = self.robot.rm_set_lift_height(speed, height, block)
-        if lift_result == 0:
-            print("\nLift motion succeeded\n")
-        else:
-            print("\nLift motion failed, Error code: ", lift_result, "\n")
     def set_Claw(self,flag_claw):
         #力控相关参数初始化
         speed = 30#夹爪运行速度初始化
@@ -180,7 +121,7 @@ class MIArmController:
                 print("\nGripper release succeeded\n")
             else:
                 print("\nGripper release failed, Error code: ", gripper_result, "\n")
-    def claw_threshold_judgment(self,value,):
+    def claw_threshold_judgment(self,value):
         """
         判断输入值与阈值的关系
         :param value: 输入值
@@ -189,7 +130,7 @@ class MIArmController:
         if value > self.threshould_high:
             print( f"{value} claw_status :open")
             self.set_Claw(0)
-        elif value <self.threshold_low:
+        elif value <self.threshould_low:
             print( f"{value} claw_status :close")
             self.set_Claw(1)
 
@@ -208,8 +149,9 @@ def main():
             #弧度转换为°
             joint_angle = list(map(todu, joint_angle))
             #夹爪状态获取并转换
-            claw_status = MI_robot.Claw_joit_dofs[dof_idx,1].tolist()#两侧夹爪对称
-            MI_robot.claw_threshold_judgment(claw_status)
+            claw_status = MI_robot.Claw_joit_dofs[dof_idx,0].tolist()#两侧夹爪对称
+            print(claw_status)
+            # MI_robot.claw_threshold_judgment(claw_status)
 
             if(dof_idx==1):
                 movej_result = MI_robot.robot.rm_movej(joint_angle, v=10, r=1, connect=0, block=1)
