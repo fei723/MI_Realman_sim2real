@@ -74,16 +74,18 @@ class MIArmController:
         print(f"设置{N}% 力值 （写操作）") 
     def set_Claw_position(self,position):
         """
-        调整夹爪的位置到设定值
-        范围100~1000
+        Args:
+            调整夹爪的位置到设定值
+            范围100~1000
         """
         point6_00 = '{"command":"write_single_register","port":1,"address":259,"data":'+str(position)+', "device":1}\r\n'
         _ = self.send_cmd(point6_00)
     def claw_threshold_judgment(self,value):
         """
-        判断输入值与阈值的关系
-        :param value: 输入值
-        :param threshold_low && threshold_high: 高低阈值判断，夹爪开启关闭
+        Args:
+            判断输入值与阈值的关系
+            param value: 输入值
+            param threshold_low && threshold_high: 高低阈值判断，夹爪开启关闭
         """
         if value > self.threshould_high:
             # print( f"{value} claw_status :open")
