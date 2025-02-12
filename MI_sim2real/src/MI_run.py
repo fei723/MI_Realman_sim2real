@@ -114,6 +114,9 @@ class MIArmController:
                 break 
             else:
                 print("the claw is reaching")
+    def draw_joint_state(self):
+        self.state = self.robot.rm_get_joint_degree()
+        
 
 def todu(x):
     return x *180/3.14
@@ -155,75 +158,3 @@ def main():
 
     except Exception as e:
         print(f"An error occurred: {e}")
-
-
-
-
-
-
-
-# class claw_init:
-#     def __init__(self,ip,port, level=3, mode=2):
-#         # 创建一个 TCP 服务器套接字
-#         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#         # 绑定到本地地址和端口
-#         self.client.connect((ip,port))
-#         print("机械臂连接",ip) 
-#         # self.set_claw_init()
-#         self.set_claw_voltage()
-#         self.set_modbus_mode()  
-#         self.set_Claw_N(50)
-#         self.threshould_low=0.040
-#         self.threshould_high=0.047
-#         self.claw_status = 0
-       
-#     def send_cmd(self, cmd_6axis):
-#         self.client.send(cmd_6axis.encode('utf-8'))
-#         # Optional: Receive a response from the server
-#         # _ = client.recv(1024).decode(s)
-#         return True 
-#     def read_status(self):
-#         return self.client.recv(1024)
-        
-#     def set_claw_voltage(self):
-#         point6_00 = '{"command":"set_tool_voltage","voltage_type":3}\r\n'
-#         _ = self.send_cmd(point6_00)
-#         print("设置夹爪端电源输出 24V")
-#     def set_modbus_mode(self):
-#         point6_00 = '{"command":"set_modbus_mode","port":1,"baudrate":115200,"timeout ":2}\r\n'
-#         _ = self.send_cmd(point6_00)
-#         print("配置通讯端口 ModbusRTU 模式")
-#     def set_claw_init(self):
-#         point6_00 = '{"command":"write_single_register","port":1,"address":256,"data":1, "device":1}\r\n'
-#         _ = self.send_cmd(point6_00) 
-#         print("执行初始化成功")
-#     def set_Claw_N(self,N):
-#         point6_00 = '{"command":"write_single_register","port":1,"address":257,"data"'+str(N)+'"device":1}\r\n'
-#         _ = self.send_cmd(point6_00)
-#         print(f"设置{N}% 力值 （写操作）") 
-#     def set_Claw_position(self,position):
-#         #调整夹爪的位置到设定值
-#         #范围100~1000
-#         point6_00 = '{"command":"write_single_register","port":1,"address":259,"data":'+str(position)+', "device":1}\r\n'
-#         _ = self.send_cmd(point6_00)
-# def set_Claw(self,flag_claw):
-#         #力控相关参数初始化
-#         speed = 30#夹爪运行速度初始化
-#         force = 50#无量纲，需要尝试
-#         block = True
-#         timeout = 0 #单位为秒设置为非阻塞模式，这样与透传模式形成配合
-#         if flag_claw==1:
-#             #此处使得夹爪闭合，采用力控方法
-#             print("\nGripper is gripping\n")
-#             gripper_result = self.robot.rm_set_gripper_pick_on(speed, force, block, timeout)
-#             if gripper_result == 0:
-#                 print("\nGripper continuous force control gripping succeeded\n")
-#             else:
-#                 print("\nGripper continuous force control gripping failed, Error code: ", gripper_result, "\n")
-#         elif flag_claw==0:
-#             #此处应为夹爪张开状态，采用力控方法
-#             gripper_result = self.robot.rm_set_gripper_release(speed, block, timeout)
-#             if gripper_result == 0:
-#                 print("\nGripper release succeeded\n")
-#             else:
-#                 print("\nGripper release failed, Error code: ", gripper_result, "\n")
