@@ -31,16 +31,16 @@ class MIArmController:
         file_path = '/home/shifei/code/isaacgyms/arm_dof_pos_cumulative.npy'
         self.joint_data = np.load(file_path)
         self.num_eposide = self.joint_data.shape[0]
-        self.arm_joint_dofs = self.joint_data[:,0:6]
+        self.arm_joint_dofs = self.joint_data[:,0:7]
         self.arm_dof = self.arm_joint_dofs.shape[1] 
-        self.Claw_joit_dofs = self.joint_data[:,7:8]
+        self.Claw_joit_dofs = self.joint_data[:,8:9]
         #####夹爪类初始化########
         # 创建一个 TCP 服务器套接字
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 绑定到本地地址和端口
         self.client.connect((ip,port))
         print("机械臂连接",ip) 
-        # self.set_claw_init()
+        self.set_claw_init()
         self.set_claw_voltage()
         self.set_modbus_mode()  
         self.set_Claw_N(50)
@@ -50,7 +50,7 @@ class MIArmController:
         self.robot.rm_set_modbus_mode(0,115200,2)
         self.pre_claw_condition=0#0为张开，1为闭合，初始化夹爪为张开
         self.now_claw_condition=0
-        self.now_degree = 0
+        self.now_degree = []
     def send_cmd(self, cmd_6axis):
         self.client.send(cmd_6axis.encode('utf-8'))
         return True 
@@ -96,7 +96,7 @@ class MIArmController:
                 self.check_claw_condition()
         elif value <self.threshould_low:
             # print( f"{value} claw_status :close")
-            self.set_Claw_position(500)
+            self.set_Claw_position(200)
             self.now_claw_condition = 0
             if(self.now_claw_condition!=self.pre_claw_condition):
                 self.check_claw_condition()
@@ -116,24 +116,33 @@ class MIArmController:
             else:
                 print("the claw is reaching")
     def save_joint_state(self):
-        joint_state = self.robot.rm_get_joint_degree().cpu().numpy()
+        
+        joint_state = self.robot.rm_get_joint_degree()[1]
+        
         self.now_degree.append(joint_state)
-    def draw_joint_state(self,flag):
+    def draw_joint_state(self):
         """
         Args:
             flag为True,开启绘图
         """
         #numpy类型
-        if flag ==True:
-            output_folder = 'joint_state_images'
-            os.makedirs(output_folder, exist_ok=True)
-            for dof_idx in range (self.arm_dof):
-                plt.figure()
-                plt.plot(self.now_degree, label="实机角度",linestyle="--", marker="o")
-                plt.plot(self.arm_joint_dofs, label="实机角度",linestyle="-.", marker="x")
-                image_path = os.path.join(output_folder, f'joint_{dof_idx}_angle.png')
-                plt.savefig(image_path)
-                plt.show()
+    
+        output_folder = 'joint_state_images'
+        os.makedirs(output_folder, exist_ok=True)
+        self.arm_joint_dofs = self.arm_joint_dofs*180/3.14
+        for dof_idx in range (self.arm_dof):
+            plt.figure()
+            self.now_degree = np.array(self.now_degree)
+            plt.plot(self.now_degree[:,dof_idx], label="Real",linestyle="--", marker=".")
+            plt.plot(self.arm_joint_dofs[:,dof_idx], label="target",linestyle="-.", marker=".")
+            plt.legend()
+            plt.title(f'Joint {dof_idx} Angle')
+            plt.xlabel('Step')
+            plt.ylabel('Angle')
+            # plt.show()
+            image_path = os.path.join(output_folder, f'joint_{dof_idx}_angle.png')
+            plt.savefig(image_path)
+                
 def todu(x):
     return x *180/3.14
 
@@ -154,7 +163,10 @@ def main():
             MI_robot.claw_threshold_judgment(claw_status)
             if(dof_idx==1):
                 movej_result = MI_robot.robot.rm_movej(joint_angle, v=10, r=1, connect=0, block=1)
-            movej_result = MI_robot.robot.rm_movej_canfd(joint_angle, follow=True)    
+            movej_result = MI_robot.robot.rm_movej_canfd(joint_angle, follow=False)  
+            # movej_result = MI_robot.robot.rm_movej_canfd(joint_angle, follow=True,trajectory_mode=2,radio=100)  
+
+            time.sleep(0.02)
             # 执行关节运动
             if movej_result == 0:
                 print(f"Joint movement succeeded.{dof_idx}")
@@ -163,12 +175,10 @@ def main():
                 print(f"Joint movement failed, Error code: {movej_result}")
             # 透传模式下需要等待一段时间
             if dof_idx==MI_robot.num_eposide-1:
-                #last loop
-                MI_robot.draw_joint_state(flag=True)
-            time.sleep(0.05)
+                MI_robot.draw_joint_state()
 
 
-        # #重置为零位状态
+        #重置为零位状态
         # joint_angle = [0,0,0,0,0,0,0]
         # MI_robot.robot.rm_movej(joint_angle, v=20, r=0, connect=0, block=1)
 
