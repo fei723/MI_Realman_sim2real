@@ -7,7 +7,7 @@ import time
 from Robotic_Arm.rm_robot_interface import *
 import socket
 import numpy as np
-
+import matplotlib.pyplot as plt
 # 定义机械臂连接信
 IP_ADDRESS = "192.168.1.18"
 PORT = 8080
@@ -29,12 +29,12 @@ class MIArmController:
             self.robot.rm_movej([0,0,0,0,0,0,0], v=20, r=0, connect=0, block=1)
         # isaacgym保存的npy文件路径
         file_path = '/home/shifei/code/isaacgyms/arm_dof_pos_cumulative.npy'
-        joint_data = np.load(file_path)
-        self.num_eposide = joint_data.shape[0]
-        self.arm_joint_dofs = joint_data[:,0:6]
+        self.joint_data = np.load(file_path)
+        self.num_eposide = self.joint_data.shape[0]
+        self.arm_joint_dofs = self.joint_data[:,0:6]
         self.arm_dof = self.arm_joint_dofs.shape[1] 
-        self.Claw_joit_dofs = joint_data[:,7:8]
-        #################################################
+        self.Claw_joit_dofs = self.joint_data[:,7:8]
+        #####夹爪类初始化########
         # 创建一个 TCP 服务器套接字
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 绑定到本地地址和端口
@@ -50,6 +50,7 @@ class MIArmController:
         self.robot.rm_set_modbus_mode(0,115200,2)
         self.pre_claw_condition=0#0为张开，1为闭合，初始化夹爪为张开
         self.now_claw_condition=0
+        self.now_degree = 0
     def send_cmd(self, cmd_6axis):
         self.client.send(cmd_6axis.encode('utf-8'))
         return True 
@@ -114,10 +115,25 @@ class MIArmController:
                 break 
             else:
                 print("the claw is reaching")
-    def draw_joint_state(self):
-        self.state = self.robot.rm_get_joint_degree()
-        
-
+    def save_joint_state(self):
+        joint_state = self.robot.rm_get_joint_degree().cpu().numpy()
+        self.now_degree.append(joint_state)
+    def draw_joint_state(self,flag):
+        """
+        Args:
+            flag为True,开启绘图
+        """
+        #numpy类型
+        if flag ==True:
+            output_folder = 'joint_state_images'
+            os.makedirs(output_folder, exist_ok=True)
+            for dof_idx in range (self.arm_dof):
+                plt.figure()
+                plt.plot(self.now_degree, label="实机角度",linestyle="--", marker="o")
+                plt.plot(self.arm_joint_dofs, label="实机角度",linestyle="-.", marker="x")
+                image_path = os.path.join(output_folder, f'joint_{dof_idx}_angle.png')
+                plt.savefig(image_path)
+                plt.show()
 def todu(x):
     return x *180/3.14
 
@@ -142,13 +158,22 @@ def main():
             # 执行关节运动
             if movej_result == 0:
                 print(f"Joint movement succeeded.{dof_idx}")
+                MI_robot.save_joint_state()
             else:
                 print(f"Joint movement failed, Error code: {movej_result}")
-
             # 透传模式下需要等待一段时间
+            if dof_idx==MI_robot.num_eposide-1:
+                #last loop
+                MI_robot.draw_joint_state(flag=True)
             time.sleep(0.05)
-        joint_angle = [0,0,0,0,0,0,0]
-        MI_robot.robot.rm_movej(joint_angle, v=20, r=0, connect=0, block=1)
+
+
+        # #重置为零位状态
+        # joint_angle = [0,0,0,0,0,0,0]
+        # MI_robot.robot.rm_movej(joint_angle, v=20, r=0, connect=0, block=1)
+
+
+
         # 断开机械臂连接
         disconnect_result = MI_robot.robot.rm_delete_robot_arm()
         if disconnect_result == 0:
